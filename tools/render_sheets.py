@@ -184,7 +184,7 @@ def main():
     vals = computed_values()
     for name, out, scale in [("5.1", "xl_51.png", 1.0), ("5.3", "xl_53.png", 1.0),
                              ("5.5", "xl_55.png", 1.0), ("5.8", "xl_58.png", 1.0),
-                             ("5.15", "xl_515.png", 1.0)]:
+                             ("5.16", "xl_516.png", 1.0)]:
         p, w, h = sheet_image(name, vals, out, scale=scale)
         print(p, w, h)
 

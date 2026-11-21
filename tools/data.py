@@ -78,22 +78,23 @@ STEPS58 = [  # (шаг, сокращаемые работы, величина, �
     (5, "(2,4), (3,4)", 3, [8, 12, 11, 10, 7, 4], 23, 54),
 ]
 
-# ============================================================== 5.15 (а)
-W515 = [("(1,2)", 1, 2, 6, 4), ("(1,3)", 1, 3, 4, 5), ("(1,4)", 1, 4, 6, 3),
-        ("(2,3)", 2, 3, 2, 4), ("(2,5)", 2, 5, 3, 3), ("(3,5)", 3, 5, 4, 2),
-        ("(4,5)", 4, 5, 3, 4)]
-R515 = 9
-ST515_ES = [0, 0, 0, 6, 6, 8, 6]        # ранние сроки начала
-ST515_OPT = [0, 0, 4, 6, 8, 8, 10]      # после оптимизации
+# ============================================================== 5.16 (а)
+# работы: (имя, i, j, t, r); R = 9; без перерывов
+W516 = [("(1,2)", 1, 2, 6, 4), ("(1,3)", 1, 3, 6, 5), ("(1,4)", 1, 4, 4, 3),
+        ("(3,4)", 3, 4, 4, 4), ("(2,5)", 2, 5, 5, 3), ("(4,5)", 4, 5, 7, 6)]
+R516 = 9
+ST516_ES = [0, 0, 0, 6, 6, 10]          # ранние сроки начала
+ST516_OPT = [4, 0, 0, 6, 10, 10]        # после оптимизации: сдвиг (1,2) на 4 дн.
 
 
-def prof(starts, T):
-    return [sum(w[4] for k, w in enumerate(W515) if starts[k] <= x < starts[k] + w[3])
+def prof(starts, T, works=None):
+    works = works if works is not None else W516
+    return [sum(w[4] for k, w in enumerate(works) if starts[k] <= x < starts[k] + w[3])
             for x in range(T)]
 
 
-PROF_ES = prof(ST515_ES, 12)
-PROF_OPT = prof(ST515_OPT, 13)
+PROF_ES = prof(ST516_ES, 17)
+PROF_OPT = prof(ST516_OPT, 17)
 
 
 def tp_tn_tab(nodes, arcs):
@@ -133,6 +134,6 @@ if __name__ == "__main__":
     print("5.3 t' =", x53, "sum x =", sum(X53), "T =", net53(x53)[2])
     x55 = [T55[i] - K55[i] * X55[i] for i in range(7)]
     print("5.5 t' =", x55, "sum x =", sum(X55), "T =", net55(x55)[2])
-    print("5.15 профиль ES:", PROF_ES, "max", max(PROF_ES))
-    print("5.15 профиль OPT:", PROF_OPT, "max", max(PROF_OPT))
+    print("5.16 профиль ES:", PROF_ES, "max", max(PROF_ES))
+    print("5.16 профиль OPT:", PROF_OPT, "max", max(PROF_OPT))
     print("5.8", H58, DUR58, COST58)

@@ -164,7 +164,7 @@ def sheet_task(wb):
 
     ws.merge_cells("B9:D9")
     c = ws["B9"]
-    c.value = "Решённые задачи: 5.1 (е), 5.3 (а), 5.5 (а), 5.8 (а), 5.15 (а)"
+    c.value = "Решённые задачи: 5.1 (е), 5.3 (а), 5.5 (а), 5.8 (а), 5.16 (а)"
     c.font = Font(name="Times New Roman", size=11, bold=True, color=ACCENT)
     c.alignment = Alignment(horizontal="center")
 
@@ -189,7 +189,7 @@ def sheet_task(wb):
                 "дополнительных средств по работам"),
         ("5.8", "Оптимизация проекта по стоимости: пошаговое сокращение продолжительности "
                 "работ по коэффициентам дополнительных затрат (КДЗ)"),
-        ("5.15", "Оптимизация проекта по ресурсам при R = 9 ед.: построение линейного графика "
+        ("5.16", "Оптимизация проекта по ресурсам при R = 9 ед.: построение линейного графика "
                  "и эпюры потребления ресурса"),
     ]
     r = 16
@@ -488,87 +488,106 @@ def sheet_58(wb):
          "критического пути.", last_col="H")
 
 
-# =====================================================================  5.15
-def sheet_515(wb):
-    ws = wb.create_sheet("5.15")
+# =====================================================================  5.16
+def sheet_516(wb):
+    ws = wb.create_sheet("5.16")
     ws.sheet_view.showGridLines = False
     ws.sheet_properties.tabColor = MID
-    widths(ws, {"A": 17, "B": 11, "C": 11, "D": 12, "E": 12, "F": 11, "G": 11,
-                "H": 9, "I": 9, "J": 9, "K": 9, "L": 9, "M": 9, "N": 9})
-    title(ws, 1, "Задача 5.15 (а). Оптимизация проекта по ресурсам (R = 9 ед.)")
-    subtitle(ws, 2, "Работы не допускают перерыва в выполнении; каждой работе приписаны t_ij и r_ij")
+    last = "R"
+    widths(ws, {"A": 17, "B": 9, "C": 9, "D": 10, "E": 10, "F": 10, "G": 8,
+                "H": 7, "I": 7, "J": 7, "K": 7, "L": 7, "M": 7, "N": 7,
+                "O": 7, "P": 7, "Q": 7, "R": 7})
+    title(ws, 1, "Задача 5.16 (а). Оптимизация проекта по ресурсам (R = 9 ед.)", last_col=last)
+    subtitle(ws, 2, "Работы не допускают перерыва в выполнении; каждой работе приписаны t_ij и r_ij",
+             last_col=last)
 
     section(ws, 4, "1. Исходные данные и параметры сетевого графика", last_col="F")
     header(ws, 5, ["Работа (i, j)", "t_ij", "r_ij", "t_рн", "t_ро", "R_п"], h=28)
-    tp, tn, T = D.net([(f"w{k}", w[1], w[2], w[3]) for k, w in enumerate(D.W515)], 5)
-    for k, w in enumerate(D.W515):
+    tp, tn, T = D.net([(f"w{k}", w[1], w[2], w[3]) for k, w in enumerate(D.W516)], 5)
+    n = len(D.W516)
+    for k, w in enumerate(D.W516):
         rp = tn[w[2]] - tp[w[1]] - w[3]
         cells(ws, 6 + k, [w[0], w[3], w[4], tp[w[1]], tp[w[1]] + w[3], rp], alt=(k % 2 == 1))
 
-    ws.merge_cells("A13:B13")
-    ws["A13"] = "T_кр, дн."
-    ws["A13"].font = F_B
-    ws["A13"].alignment = CEN
-    ws["A13"].border = BOX
-    ws["C13"] = T
-    ws["C13"].font = F_B
-    ws["C13"].alignment = CEN
-    ws["C13"].border = BOX
-    ws.merge_cells("D13:F13")
-    ws["D13"] = "критический путь 1 – 2 – 3 – 5"
-    ws["D13"].font = F_SMALL
-    ws["D13"].alignment = LEFT
+    rT = 6 + n
+    ws.merge_cells(f"A{rT}:B{rT}")
+    ws[f"A{rT}"] = "T_кр, дн."
+    ws[f"A{rT}"].font = F_B
+    ws[f"A{rT}"].alignment = CEN
+    ws[f"A{rT}"].border = BOX
+    ws[f"C{rT}"] = T
+    ws[f"C{rT}"].font = F_B
+    ws[f"C{rT}"].alignment = CEN
+    ws[f"C{rT}"].border = BOX
+    ws.merge_cells(f"D{rT}:F{rT}")
+    ws[f"D{rT}"] = "критический путь 1 – 3 – 4 – 5"
+    ws[f"D{rT}"].font = F_SMALL
+    ws[f"D{rT}"].alignment = LEFT
 
-    section(ws, 15, "2. Потребность в ресурсе при ранних сроках начала работ", last_col="N")
-    header(ws, 16, ["День"] + list(range(1, 13)), h=20)
-    cells(ws, 17, ["Ресурс, ед."] + [f"=SUMPRODUCT(($D$6:$D$12<{get_column_letter(2+k)}$16)*"
-                                     f"($D$6:$D$12+$B$6:$B$12>={get_column_letter(2+k)}$16)*$C$6:$C$12)"
-                                     for k in range(12)])
-    cells(ws, 18, ["Максимум", "=MAX(B17:M17)"])
-    ws.merge_cells("A19:M19")
-    c = ws["A19"]
-    c.value = ("Максимальная потребность 12 ед. превышает R = 9 ед. — требуется сдвиг работ "
-               "в пределах их полных резервов")
+    r2 = rT + 2
+    section(ws, r2, "2. Потребность в ресурсе при ранних сроках начала работ", last_col=last)
+    header(ws, r2 + 1, ["День"] + list(range(1, 18)), h=20)
+    cells(ws, r2 + 2, ["Ресурс, ед."] + [
+        f"=SUMPRODUCT(($D$6:$D$11<{get_column_letter(2+k)}${r2+1})*"
+        f"($D$6:$D$11+$B$6:$B$11>={get_column_letter(2+k)}${r2+1})*$C$6:$C$11)"
+        for k in range(17)])
+    cells(ws, r2 + 3, ["Максимум", f"=MAX(B{r2+2}:R{r2+2})"])
+    ws.merge_cells(f"A{r2+4}:R{r2+4}")
+    c = ws[f"A{r2+4}"]
+    c.value = ("Максимальная потребность 12 ед. превышает R = 9 ед. — сдвиг работы (1,2) "
+               "на 4 дня в пределах полного резерва")
     c.font = F_RED
     c.alignment = LEFT
 
-    section(ws, 21, "3. Оптимизированный план (сдвиг работ в пределах резервов)", last_col="N")
-    header(ws, 22, ["Работа (i, j)", "Начало", "Окончание", "t_ij", "r_ij", "Сдвиг, дн."], h=28)
-    for k, w in enumerate(D.W515):
-        st = D.ST515_OPT[k]
-        cells(ws, 23 + k, [w[0], st, f"=B{23+k}+D{23+k}", w[3], w[4],
-                           (st - tp[w[1]]) if st - tp[w[1]] else "–"], alt=(k % 2 == 1))
-        ws[f"B{23+k}"].fill = PatternFill("solid", fgColor=GOLD)
+    r3 = r2 + 6
+    section(ws, r3, "3. Оптимизированный план (сдвиг работ в пределах резервов)", last_col=last)
+    header(ws, r3 + 1, ["Работа (i, j)", "Начало", "Окончание", "t_ij", "r_ij", "Сдвиг, дн."], h=28)
+    for k, w in enumerate(D.W516):
+        st = D.ST516_OPT[k]
+        rr = r3 + 2 + k
+        cells(ws, rr, [w[0], st, f"=B{rr}+D{rr}", w[3], w[4],
+                       (st - tp[w[1]]) if st - tp[w[1]] else "–"], alt=(k % 2 == 1))
+        ws[f"B{rr}"].fill = PatternFill("solid", fgColor=GOLD)
+    opt0, opt1 = r3 + 2, r3 + 1 + n
 
-    section(ws, 31, "4. Эпюра потребления ресурса после оптимизации", last_col="N")
-    header(ws, 32, ["День"] + list(range(1, 14)), h=20)
-    cells(ws, 33, ["Ресурс, ед."] + [f"=SUMPRODUCT(($B$23:$B$29<{get_column_letter(2+k)}$32)*"
-                                     f"($B$23:$B$29+$D$23:$D$29>={get_column_letter(2+k)}$32)*$E$23:$E$29)"
-                                     for k in range(13)])
-    for k in range(13):
-        cell = ws.cell(row=33, column=2 + k)
+    r4 = opt1 + 2
+    section(ws, r4, "4. Эпюра потребления ресурса после оптимизации", last_col=last)
+    header(ws, r4 + 1, ["День"] + list(range(1, 18)), h=20)
+    cells(ws, r4 + 2, ["Ресурс, ед."] + [
+        f"=SUMPRODUCT(($B${opt0}:$B${opt1}<{get_column_letter(2+k)}${r4+1})*"
+        f"($B${opt0}:$B${opt1}+$D${opt0}:$D${opt1}>={get_column_letter(2+k)}${r4+1})*$E${opt0}:$E${opt1})"
+        for k in range(17)])
+    for k in range(17):
+        cell = ws.cell(row=r4 + 2, column=2 + k)
         cell.fill = PatternFill("solid", fgColor=LIGHT)
         cell.font = F_B
-    cells(ws, 34, ["Ограничение R"] + ["=$E$37"] * 13)
-    for k in range(13):
-        cell = ws.cell(row=34, column=2 + k)
+    cells(ws, r4 + 3, ["Ограничение R"] + ["=$E$37"] * 17)
+    for k in range(17):
+        cell = ws.cell(row=r4 + 3, column=2 + k)
         cell.font = Font(name="Times New Roman", size=9, italic=True, color=ACCENT)
 
-    section(ws, 36, "5. Результаты", last_col="N")
-    result_block(ws, 37, "Ограничение R, ед.", D.R515, last_col="F")
-    result_block(ws, 38, "Максимальная потребность в ресурсе, ед.", "=MAX(B33:N33)", last_col="F")
-    result_block(ws, 39, "Время выполнения проекта T, дн.", "=MAX(C23:C29)", last_col="F")
-    note(ws, 41,
-         "Сдвинуты: работа (1,4) — на 4 дня, работа (2,5) — на 2 дня. Работа (1,4) имеет полный резерв "
-         "3 дня, однако именно этот сдвиг даёт минимальное увеличение срока: при сдвиге работы (1,3) "
-         "срок возрастает до 14 дней. Остальные работы начинаются в ранние сроки; максимальная "
-         "потребность в ресурсе равна 9 ед., срок выполнения проекта — 13 дней.", last_col="H")
+    r5 = r4 + 5
+    section(ws, r5, "5. Результаты", last_col=last)
+    # result_block uses E row; put R in E37 if r5+1==37 else fix R refs
+    result_block(ws, r5 + 1, "Ограничение R, ед.", D.R516, last_col="F")
+    result_block(ws, r5 + 2, "Максимальная потребность в ресурсе, ед.",
+                 f"=MAX(B{r4+2}:R{r4+2})", last_col="F")
+    result_block(ws, r5 + 3, "Время выполнения проекта T, дн.",
+                 f"=MAX(C{opt0}:C{opt1})", last_col="F")
+    # R constraint row should point to the R result cell
+    r_cell = f"E{r5+1}"
+    for k in range(17):
+        ws.cell(row=r4 + 3, column=2 + k).value = f"=${r_cell}"
+    note(ws, r5 + 5,
+         "Сдвинута работа (1,2) на 4 дня (в пределах Rп = 6); работа (2,5) начинается в t = 10. "
+         "Максимальная потребность равна 9 ед., срок проекта совпадает с критическим — 17 дней.",
+         last_col="H")
 
     ch = BarChart()
     ch.type = "col"
     ch.gapWidth = 40
-    data = Reference(ws, min_col=2, max_col=14, min_row=33, max_row=33)
-    cats = Reference(ws, min_col=2, max_col=14, min_row=32, max_row=32)
+    data = Reference(ws, min_col=2, max_col=18, min_row=r4 + 2, max_row=r4 + 2)
+    cats = Reference(ws, min_col=2, max_col=18, min_row=r4 + 1, max_row=r4 + 1)
     ch.add_data(data, from_rows=True, titles_from_data=False)
     ch.set_categories(cats)
     ch.series[0].graphicalProperties.solidFill = "8FAADC"
@@ -581,14 +600,14 @@ def sheet_515(wb):
     style_chart(ch, 15, 7.5)
 
     ln = LineChart()
-    ln.add_data(Reference(ws, min_col=2, max_col=14, min_row=34, max_row=34), from_rows=True,
-                titles_from_data=False)
+    ln.add_data(Reference(ws, min_col=2, max_col=18, min_row=r4 + 3, max_row=r4 + 3),
+                from_rows=True, titles_from_data=False)
     ln.series[0].graphicalProperties.line.solidFill = ACCENT
     ln.series[0].graphicalProperties.line.dashStyle = "dash"
     ln.series[0].graphicalProperties.line.width = 18000
     ln.series[0].marker = None
     ch += ln
-    ws.add_chart(ch, "P15")
+    ws.add_chart(ch, "A44")
 
 
 def main():
@@ -612,7 +631,7 @@ def main():
               "Σx ≤ 42; t_о – t_н ≥ d_ij; t_о – t_н = t_ij – k_ij·x_ij; 0 ≤ x_ij ≤ (t_ij – d_ij)/k_ij. "
               "Срок сокращён с 40 до 30 дней при затратах 41 ден. ед. (B = 42).")
     sheet_58(wb)
-    sheet_515(wb)
+    sheet_516(wb)
 
     wb.properties.creator = "Ильич Э. С."
     wb.properties.title = "УСР № 5. Модели сетевого планирования и управления"

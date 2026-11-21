@@ -142,19 +142,20 @@ def main():
     net_fig(pos58, arcs58, 5, "net58.png", crit={(1, 3), (3, 4), (4, 5)},
             dummies={(2, 3)}, figsize=(9.2, 4.0))
 
-    # ---------- 5.15
-    pos515 = {1: (0, 1.5), 2: (2.3, 2.9), 3: (4.6, 1.5), 4: (2.3, 0.1), 5: (7.4, 1.5)}
-    arcs515 = [(1, 2, "6, 4"), (1, 3, "4, 5"), (1, 4, "6, 3"), (2, 3, "2, 4"),
-               (2, 5, "3, 3"), (3, 5, "4, 2"), (4, 5, "3, 4")]
-    net_fig(pos515, arcs515, 5, "net515.png", crit={(1, 2), (2, 3), (3, 5)},
+    # ---------- 5.16 (а)
+    pos516 = {1: (0, 1.5), 2: (2.5, 2.9), 3: (2.5, 0.1), 4: (5.0, 1.5), 5: (7.6, 1.5)}
+    arcs516 = [(1, 2, "6, 4"), (1, 4, "4, 3"), (1, 3, "6, 5"), (2, 5, "5, 3"),
+               (3, 4, "4, 4"), (4, 5, "7, 6")]
+    net_fig(pos516, arcs516, 5, "net516.png", crit={(1, 3), (3, 4), (4, 5)},
             figsize=(9.2, 4.2))
 
-    rows_es = [(f"{w[0]} ({w[3]}; {w[4]})", D.ST515_ES[k], w[3], k in (0, 3, 5))
-               for k, w in enumerate(D.W515)]
-    gantt(rows_es, 12, "gantt515_a.png", res=D.PROF_ES, res_max=9, figsize=(9, 5.4))
-    rows_opt = [(f"{w[0]} ({w[3]}; {w[4]})", D.ST515_OPT[k], w[3], k in (0, 3, 5))
-                for k, w in enumerate(D.W515)]
-    gantt(rows_opt, 13, "gantt515_b.png", res=D.PROF_OPT, res_max=9, figsize=(9, 5.4))
+    crit_idx = {1, 3, 5}  # (1,3), (3,4), (4,5)
+    rows_es = [(f"{w[0]} ({w[3]}; {w[4]})", D.ST516_ES[k], w[3], k in crit_idx)
+               for k, w in enumerate(D.W516)]
+    gantt(rows_es, 17, "gantt516_a.png", res=D.PROF_ES, res_max=9, figsize=(9.4, 5.4))
+    rows_opt = [(f"{w[0]} ({w[3]}; {w[4]})", D.ST516_OPT[k], w[3], k in crit_idx)
+                for k, w in enumerate(D.W516)]
+    gantt(rows_opt, 17, "gantt516_b.png", res=D.PROF_OPT, res_max=9, figsize=(9.4, 5.4))
     print("готово:", sorted(os.listdir(OUT)))
 
 
