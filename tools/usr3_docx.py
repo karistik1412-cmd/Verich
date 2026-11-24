@@ -1,0 +1,453 @@
+# -*- coding: utf-8 -*-
+"""Сборка отчёта по УСР №2 (Word)."""
+import os
+import re
+import sys
+from docx import Document
+from docx.shared import Pt, Cm, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT, WD_LINE_SPACING, WD_BREAK
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.section import WD_SECTION
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+# УСР 3
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS = os.path.join(ROOT, "assets")
+FN = os.path.join(ROOT, "Эконометрика УСР 3.docx")
+
+FONT = "Times New Roman"
+DARK = RGBColor(0x1F, 0x38, 0x64)
+RED = RGBColor(0xC0, 0x00, 0x00)
+GREY = RGBColor(0x59, 0x59, 0x59)
+HDR_FILL = "DEEAF6"
+ALT_FILL = "F2F6FC"
+
+doc = Document()
+
+
+# ----------------------------------------------------------------- утилиты
+def setup_styles():
+    st = doc.styles["Normal"]
+    st.font.name = FONT
+    st.font.size = Pt(14)
+    st._element.rPr.rFonts.set(qn("w:eastAsia"), FONT)
+    st._element.rPr.rFonts.set(qn("w:cs"), FONT)
+    pf = st.paragraph_format
+    pf.line_spacing = 1.5
+    pf.space_after = Pt(0)
+    pf.space_before = Pt(0)
+    pf.first_line_indent = Cm(1.25)
+    pf.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    # поля страницы
+    s = doc.sections[0]
+    s.page_width = Cm(21)
+    s.page_height = Cm(29.7)
+    s.left_margin = Cm(3)
+    s.right_margin = Cm(1.5)
+    s.top_margin = Cm(2)
+    s.bottom_margin = Cm(2)
+    s.footer_distance = Cm(1.0)
+
+
+def run(p, text, size=14, bold=False, italic=False, color=None, sub=False, sup=False):
+    r = p.add_run(text)
+    r.font.name = FONT
+    r._element.rPr.rFonts.set(qn("w:eastAsia"), FONT)
+    r.font.size = Pt(size)
+    r.bold = bold
+    r.italic = italic
+    if sub:
+        r.font.subscript = True
+    if sup:
+        r.font.superscript = True
+    if color is not None:
+        r.font.color.rgb = color
+    return r
+
+
+TOKEN = re.compile(r"(_\{[^}]*\}|\^\{[^}]*\}|\*[^*]+\*)")
+NBSP = "\u00a0"
+
+
+def rich(p, text, size=14, bold=False, italic=False, color=None):
+    """Разметка: _{sub}, ^{sup}, *курсив*."""
+    for part in TOKEN.split(text):
+        if not part:
+            continue
+        if part.startswith("_{"):
+            run(p, part[2:-1], size, bold, italic, color, sub=True)
+        elif part.startswith("^{"):
+            run(p, part[2:-1], size, bold, italic, color, sup=True)
+        elif part.startswith("*") and part.endswith("*") and len(part) > 2:
+            run(p, part[1:-1], size, bold, True, color)
+        else:
+            part = part.replace(" · ", NBSP + "·" + NBSP).replace(" = ", NBSP + "=" + NBSP)
+            part = re.sub(r"\[[^\]]*\]", lambda m: m.group(0).replace(" ", NBSP), part)
+            run(p, part, size, bold, italic, color)
+
+
+def P(text="", indent=True, align=None, size=14, bold=False, italic=False, color=None,
+      space_before=0, space_after=0, keep=False):
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(1.25) if indent else Cm(0)
+    pf.alignment = align if align is not None else WD_ALIGN_PARAGRAPH.JUSTIFY
+    pf.space_before = Pt(space_before)
+    pf.space_after = Pt(space_after)
+    pf.line_spacing = 1.5
+    pf.keep_with_next = keep
+    if text:
+        rich(p, text, size, bold, italic, color)
+    return p
+
+
+_FIRST_H1 = [True]
+
+
+def H1(text, page_break=True):
+    if len(doc.paragraphs) == 0 and len(doc.tables) == 0:
+        page_break = False
+    if page_break:
+        doc.add_page_break()
+    p = doc.add_paragraph()
+    p.paragraph_format.first_line_indent = Cm(0)
+    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_after = Pt(12)
+    p.paragraph_format.space_before = Pt(0)
+    rich(p, text, 16, bold=True, color=DARK)
+    return p
+
+
+def H2(text, space_before=14, size=14):
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    pf.space_before = Pt(space_before)
+    pf.space_after = Pt(4)
+    pf.keep_with_next = True
+    rich(p, text, size, bold=True, color=DARK)
+    return p
+
+
+def FCAP(text):
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    pf.space_before = Pt(4)
+    pf.space_after = Pt(10)
+    rich(p, text, 13, bold=False, italic=False)
+    return p
+
+
+def TCAP(text, keep=True):
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    pf.space_before = Pt(10)
+    pf.space_after = Pt(4)
+    pf.keep_with_next = keep
+    rich(p, text, 13)
+    return p
+
+
+def formula(text, number=None, size=14):
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.space_before = Pt(4)
+    pf.space_after = Pt(4)
+    pf.line_spacing = 1.15
+    if number is None:
+        pf.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        rich(p, text, size, italic=True)
+        return p
+    pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    ts = pf.tab_stops
+    ts.add_tab_stop(Cm(8.0), WD_TAB_ALIGNMENT.CENTER)
+    ts.add_tab_stop(Cm(16.5), WD_TAB_ALIGNMENT.RIGHT)
+    run(p, "\t", size)
+    rich(p, text, size, italic=True)
+    run(p, "\t(" + number + ")", size)
+    return p
+
+
+def figure(fname, width_cm, caption):
+    p = doc.add_paragraph()
+    p.paragraph_format.first_line_indent = Cm(0)
+    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(8)
+    p.paragraph_format.space_after = Pt(2)
+    p.paragraph_format.keep_with_next = True
+    p.add_run().add_picture(os.path.join(ASSETS, fname), width=Cm(width_cm))
+    FCAP(caption)
+
+
+def shade(cell, color):
+    tcPr = cell._tc.get_or_add_tcPr()
+    shd = OxmlElement("w:shd")
+    shd.set(qn("w:val"), "clear")
+    shd.set(qn("w:color"), "auto")
+    shd.set(qn("w:fill"), color)
+    tcPr.append(shd)
+
+
+def set_cell(cell, text, size=11, bold=False, align=WD_ALIGN_PARAGRAPH.CENTER, italic=False,
+             color=None):
+    cell.text = ""
+    p = cell.paragraphs[0]
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.line_spacing = 1.25
+    pf.space_before = Pt(1)
+    pf.space_after = Pt(1)
+    pf.alignment = align
+    rich(p, str(text), size, bold, italic, color)
+
+
+def table(rows, widths, font=11, header_rows=1, align=None, highlight=None, bold_rows=(),
+          caption=None, center_table=True):
+    if caption:
+        TCAP(caption)
+    t = doc.add_table(rows=len(rows), cols=len(rows[0]))
+    t.style = "Table Grid"
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    t.autofit = False
+    tblPr = t._tbl.tblPr
+    layout = OxmlElement("w:tblLayout")
+    layout.set(qn("w:type"), "fixed")
+    tblPr.append(layout)
+    keep = len(rows) <= (header_rows + 9)
+    for r_i, row in enumerate(rows):
+        tr = t.rows[r_i]
+        if r_i < header_rows:
+            trPr = tr._tr.get_or_add_trPr()
+            th = OxmlElement("w:tblHeader")
+            trPr.append(th)
+        for c_i, val in enumerate(row):
+            cell = t.cell(r_i, c_i)
+            cell.width = Cm(widths[c_i])
+            is_head = r_i < header_rows
+            al = WD_ALIGN_PARAGRAPH.CENTER
+            if align and not is_head:
+                al = align[c_i]
+            set_cell(cell, val, font, bold=is_head or (r_i in bold_rows), align=al)
+            if is_head:
+                shade(cell, HDR_FILL)
+            elif highlight and (r_i, c_i) in highlight:
+                shade(cell, highlight[(r_i, c_i)])
+            elif r_i % 2 == 0:
+                shade(cell, ALT_FILL)
+            if keep and r_i < len(rows) - 1:
+                for cp in cell.paragraphs:
+                    cp.paragraph_format.keep_with_next = True
+    for c_i, w in enumerate(widths):
+        for row in t.rows:
+            row.cells[c_i].width = Cm(w)
+    return t
+
+
+def bullets(items, size=14):
+    for it in items:
+        p = doc.add_paragraph()
+        pf = p.paragraph_format
+        pf.first_line_indent = Cm(1.25)
+        pf.left_indent = Cm(0)
+        pf.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        rich(p, "– " + it, size)
+
+
+def add_page_number_footer(section):
+    footer = section.footer
+    p = footer.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.first_line_indent = Cm(0)
+    run(p, "", 12)
+    fld = OxmlElement("w:fldSimple")
+    fld.set(qn("w:instr"), "PAGE")
+    r = OxmlElement("w:r")
+    rPr = OxmlElement("w:rPr")
+    rf = OxmlElement("w:rFonts")
+    rf.set(qn("w:ascii"), FONT)
+    rf.set(qn("w:hAnsi"), FONT)
+    sz = OxmlElement("w:sz")
+    sz.set(qn("w:val"), "24")
+    rPr.append(rf)
+    rPr.append(sz)
+    r.append(rPr)
+    t = OxmlElement("w:t")
+    t.text = "1"
+    r.append(t)
+    fld.append(r)
+    p._p.append(fld)
+
+
+
+
+def title_page():
+    def tp(text, size=14, bold=False, before=0, after=0, color=None,
+           align=WD_ALIGN_PARAGRAPH.CENTER):
+        p = doc.add_paragraph()
+        pf = p.paragraph_format
+        pf.first_line_indent = Cm(0)
+        pf.alignment = align
+        pf.space_before = Pt(before)
+        pf.space_after = Pt(after)
+        pf.line_spacing = 1.0
+        rich(p, text, size, bold=bold, color=color)
+
+    tp("МИНИСТЕРСТВО ОБРАЗОВАНИЯ РЕСПУБЛИКИ БЕЛАРУСЬ", 13, True, 0, 4)
+    tp("УО «ПОЛЕССКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ»", 13, True, 0, 26)
+    tp("Инженерный факультет", 14)
+    tp("Кафедра информационных технологий и интеллектуальных систем", 13.5)
+    tp("ОТЧЁТ", 22, True, 110, 8)
+    tp("УСР №3", 16, True, 0, 30)
+    tp("по дисциплине: «Эконометрика и исследование операций в экономике»", 14, False, 0, 8)
+    tp("на тему: «Модели анализа и оценки инвестиционных проектов»", 14, False, 0, 12)
+    tp("Задачи 3.4, 3.6, 3.12  (в учебнике 1.4, 1.6, 3.12)", 14, True, 0, 0, DARK)
+    R = WD_ALIGN_PARAGRAPH.RIGHT
+    tp("Выполнил:", 14, False, 104, 0, None, R)
+    tp("студент группы 24ИТ-3", 14, False, 0, 0, None, R)
+    tp("Ильич Э. С.", 14, False, 0, 0, None, R)
+    tp("Проверил:", 14, False, 22, 0, None, R)
+    tp("ассистент", 14, False, 0, 0, None, R)
+    tp("Верич А. И.", 14, False, 0, 0, None, R)
+    tp("ПИНСК 2026", 14, True, 40, 0)
+
+
+TOC_ITEMS = [
+    ("ЗАДАЧИ", 0),
+    ("Задача 3.4. Предельный уровень инфляции", 1),
+    ("Задача 3.6. Инвестиции при инфляции", 1),
+    ("Задача 3.12. Оптимальный портфель", 1),
+    ("ПРИЛОЖЕНИЕ А", 0),
+]
+
+
+def toc(pages):
+    H1("ОГЛАВЛЕНИЕ", page_break=True)
+    pages = pages or {}
+    for text, lvl in TOC_ITEMS:
+        p = doc.add_paragraph()
+        pf = p.paragraph_format
+        pf.first_line_indent = Cm(0)
+        pf.left_indent = Cm(0 if lvl == 0 else 0.75)
+        pf.line_spacing = 1.5
+        pf.space_after = Pt(0)
+        pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        pf.tab_stops.add_tab_stop(Cm(16.5), WD_TAB_ALIGNMENT.RIGHT, 1)
+        run(p, text, 14, bold=(lvl == 0))
+        run(p, "\t" + str(pages.get(text, "")) if pages else "\t", 14, bold=(lvl == 0))
+
+
+def tasks():
+    H1("ЗАДАЧИ", page_break=True)
+    P("Расчёты выполнены в файле «Эконометрика Верич УСР 3.xlsx». Ниже – как считалось "
+      "на листах Excel (жёлтые ячейки – исходные данные, зелёные – результаты).")
+
+    H2("ЗАДАЧА 3.4")
+    P("В учебнике это задача 1.4. Инвестор: I_{0} = 150, потоки 150 и 150 за два года, "
+      "ставка 15 %. Нужна инфляция, до которой NPV ≥ 0.")
+    P("На листе «3.4» в ячейки B5:B8 введены I_{0}, CF1, CF2 и r. Для набора инфляций i "
+      "в столбце A записана ставка с инфляцией")
+    formula("d = (1+r)·(1+i) − 1", "3.1")
+    P("в виде =(1+$B$8)*(1+A13)-1. NPV в столбце C:")
+    formula("=-$B$5+$B$6/(1+B13)+$B$7/(1+B13)^2", None)
+    P("По таблице NPV меняет знак между 40 % и 50 %. Критическое i* нашла из условия "
+      "NPV = 0, что даёт d* = (1+√5)/2 (ячейка A24: =(1+SQRT(5))/2) и "
+      "i* = d*/(1+r) − 1 ≈ 40,70 % (ячейка B24). Проверка NPV в C24 даёт 0.")
+    table(
+        [["i", "NPV (Excel)"],
+         ["0 %", "93,86"],
+         ["10 %", "62,31"],
+         ["40 %", "1,04"],
+         ["40,70 %", "0,00"],
+         ["50 %", "−12,63"]],
+        [4.0, 5.0], font=12,
+        caption="Таблица 3.1 – Фрагмент листа «3.4»")
+    P("Вывод по Excel: проект эффективен при инфляции не выше 40,70 %.")
+
+    H2("ЗАДАЧА 3.6")
+    P("В учебнике это задача 1.6. На листе «3.6»: B5=800, B6=300, B7=5, B8=12 %. "
+      "Для трёх значений инфляции (10, 12, 18 %) в A11:A13 ставка d считается той же "
+      "формулой, что и в 3.4. NPV аннуитета:")
+    formula("=-$B$5+$B$6*(1-(1+B11)^(-$B$7))/B11", None)
+    table(
+        [["Инфляция", "d", "NPV", "Вывод (формула ЕСЛИ)"],
+         ["10 %", "23,20 %", "37,51", "принимаем"],
+         ["12 %", "25,44 %", "−0,44", "отклоняем"],
+         ["18 %", "32,16 %", "−98,53", "отклоняем"]],
+        [3.2, 3.2, 3.2, 5.4], font=12,
+        caption="Таблица 3.2 – Результаты листа «3.6»")
+    P("При ожидаемой инфляции 10 % проект ещё выгоден, при 12 % и 18 % – нет.")
+
+    H2("ЗАДАЧА 3.12")
+    P("Лист «3.12». В B5:E10 стоят денежные потоки шести проектов (год 1 пустой – как "
+      "в табл. 3.5 учебника). NPV в F5:F10:")
+    formula("=B5+C5/1.15^2+D5/1.15^3+E5/1.15^4", None)
+    P("В H5:H10 – бинарные переменные x (жёлтые). Их подбирает «Поиск решения»: "
+      "максимум C18 = SUMPRODUCT(F5:F10;H5:H10) при ограничениях H5+H6≤1, H7+H9≤1, "
+      "инвестиции t=0 ≤ 100, продукция проектов 2, 3, 5 ≤ 550, x ∈ {0;1}.")
+    table(
+        [["Проект", "NPV, млн руб.", "x"],
+         ["1", "22,00", "1"],
+         ["2", "89,16", "0"],
+         ["3", "19,56", "0"],
+         ["4", "28,65", "1"],
+         ["5", "29,74", "0"],
+         ["6", "102,16", "1"],
+         ["Итого NPV", "152,80", ""]],
+        [4.0, 5.0, 3.0], font=12,
+        caption="Таблица 3.3 – Оптимум Поиска решения")
+    P("Оптимальный портфель по Excel: проекты 1, 4 и 6, суммарный NPV ≈ 152,80 млн руб.")
+
+
+def appendix_a():
+    H1("ПРИЛОЖЕНИЕ А")
+    p = doc.add_paragraph()
+    p.paragraph_format.first_line_indent = Cm(0)
+    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    rich(p, "Файл Excel", 14, bold=True)
+    P("«Эконометрика Верич УСР 3.xlsx»: лист «Задание» – формулировки; «3.4», «3.6», «3.12» – "
+      "расчёты. Исходные данные выделены жёлтым, ответы – зелёным. Для 3.12 использована "
+      "надстройка «Поиск решения».")
+
+
+SECTIONS = [
+    ("title", title_page),
+    ("toc", lambda: toc(None)),
+    ("tasks", tasks),
+    ("appA", appendix_a),
+]
+
+
+def build(pages=None, skip=(), out=FN):
+    global doc
+    doc = Document()
+    setup_styles()
+    add_page_number_footer(doc.sections[0])
+    doc.sections[0].different_first_page_header_footer = True
+    mapping = dict(SECTIONS)
+    for k, _ in SECTIONS:
+        if k in skip:
+            continue
+        if k == "toc":
+            toc(pages)
+        else:
+            mapping[k]()
+    doc.core_properties.author = "Ильич Э. С."
+    doc.save(out)
+    return out
+
+
+if __name__ == "__main__":
+    print(build(pages={
+        "ЗАДАЧИ": 3,
+        "Задача 3.4. Предельный уровень инфляции": 3,
+        "Задача 3.6. Инвестиции при инфляции": 4,
+        "Задача 3.12. Оптимальный портфель": 5,
+        "ПРИЛОЖЕНИЕ А": 6,
+    }))

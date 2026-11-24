@@ -351,6 +351,9 @@ def f2(x):
 
 def task16():
     H1("ЗАДАЧИ", page_break=True)
+    P("Решение выполнено в Excel (файл «Пась А.М. 24ИТ-3 УСР Свитина.xlsx»), листы «Задание», "
+      "«1.6 МОБ» и «Цены». Ниже — условие и результаты формул Excel (MINVERSE, ссылки на потоки), "
+      "а не рукописный расчёт.")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     rich(p, "ЗАДАЧА 1.6", 14, bold=True, color=DARK)
