@@ -10,6 +10,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+import omml
 # данные задачи 1.6 зашиты в текст отчёта
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -441,7 +442,11 @@ def task16():
     H2("Прогнозирование цен")
     P("4) p_{1} = 2, k_w = 0,7. Стоимостной баланс отрасли j:")
     formula("p_j X_j = Σ_i p_i x_{ij} + 0,7·з/п_j·p_j + проч_j·p_j.", "1.6")
-    P("Система относительно p_{2}, p_{3} решается МОБР и МУМНОЖ: p_{2} ≈ 1,431, p_{3} ≈ 1,435.")
+    omml.add_brace_system(doc, [
+        ["p_1 = 2"],
+        ["уравнения баланса для отраслей 2 и 3"],
+    ])
+    P("Решение МОБР и МУМНОЖ: p_{2} ≈ 1,431, p_{3} ≈ 1,435.")
     P("5) Зарплата 2-й отрасли увеличивается на 30 %:")
     formula("(X_j − проч_j) p_j − Σ_i x_{ij} p_i = з/п_j^{нов}.", "1.7")
     P("Решение МОБР и МУМНОЖ: p ≈ (1,087; 1,140; 1,075).")

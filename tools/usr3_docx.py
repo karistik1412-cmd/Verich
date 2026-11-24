@@ -10,6 +10,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+import omml
 # УСР 3
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -388,8 +389,14 @@ def tasks():
     P("Шесть проектов, r = 15 %, бюджет t = 0 не более 100 млн. Пары 1–2 и 3–5 взаимоисключающие, "
       "спрос на продукцию проектов 2, 3, 5 ≤ 550. NPV проекта:")
     formula("NPV = CF_{0} + CF_{2}/1,15^{2} + CF_{3}/1,15^{3} + CF_{4}/1,15^{4}", "3.5")
-    formula("max Σ NPV_j x_j,   x_j ∈ {0;1},   x_{1}+x_{2} ≤ 1,   x_{3}+x_{5} ≤ 1,", "3.6")
-    P("инвестиции t=0 ≤ 100, продукция проектов 2, 3, 5 ≤ 550. Оптимум:")
+    omml.add_eqarr(doc, [["max Σ NPV_j x_j"]])
+    omml.add_brace_system(doc, [
+        ["x_j ∈ {0; 1}"],
+        ["x_1 + x_2 ≤ 1,    x_3 + x_5 ≤ 1"],
+        ["инвестиции t=0 ≤ 100"],
+        ["продукция проектов 2, 3, 5 ≤ 550"],
+    ])
+    P("Оптимум:")
     table(
         [["Проект", "NPV, млн руб.", "x"],
          ["1", "22,00", "1"],
