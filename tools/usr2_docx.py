@@ -12,6 +12,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import usr2_data as D
 import omml
+import word_toc
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "assets")
@@ -106,7 +107,7 @@ def P(text="", indent=True, align=None, size=14, bold=False, italic=False, color
 _FIRST_H1 = [True]
 
 
-def H1(text, page_break=True):
+def H1(text, page_break=True, bookmark=None):
     if len(doc.paragraphs) == 0 and len(doc.tables) == 0:
         page_break = False
     if page_break:
@@ -117,10 +118,12 @@ def H1(text, page_break=True):
     p.paragraph_format.space_after = Pt(12)
     p.paragraph_format.space_before = Pt(0)
     rich(p, text, 16, bold=True)
+    if bookmark:
+        word_toc.bookmark(p, bookmark)
     return p
 
 
-def H2(text, space_before=14, size=14):
+def H2(text, space_before=14, size=14, bookmark=None):
     p = doc.add_paragraph()
     pf = p.paragraph_format
     pf.first_line_indent = Cm(0)
@@ -129,6 +132,8 @@ def H2(text, space_before=14, size=14):
     pf.space_after = Pt(4)
     pf.keep_with_next = True
     rich(p, text, size, bold=True)
+    if bookmark:
+        word_toc.bookmark(p, bookmark)
     return p
 
 
@@ -323,34 +328,23 @@ def title_page():
 
 
 TOC_ITEMS = [
-    ("ЗАДАЧИ", 0),
-    ("Задача 2.4 (а). Метод последовательных уступок", 1),
-    ("Задача 2.4 (б). Метод ведущего критерия", 1),
-    ("Задача 2.4 (в). Равные относительные отклонения", 1),
-    ("Задача 2.4 (г). Метод минимакса", 1),
-    ("ПРИЛОЖЕНИЕ А", 0),
-    ("ПРИЛОЖЕНИЕ Б", 0),
+    ("ЗАДАЧИ", 0, "toc_zad"),
+    ("Задача 2.4 (а). Метод последовательных уступок", 1, "toc_24a"),
+    ("Задача 2.4 (б). Метод ведущего критерия", 1, "toc_24b"),
+    ("Задача 2.4 (в). Равные относительные отклонения", 1, "toc_24c"),
+    ("Задача 2.4 (г). Метод минимакса", 1, "toc_24d"),
+    ("ПРИЛОЖЕНИЕ А", 0, "toc_a"),
+    ("ПРИЛОЖЕНИЕ Б", 0, "toc_b"),
 ]
 
 
-def toc(pages):
+def toc(pages=None):
     H1("ОГЛАВЛЕНИЕ", page_break=True)
-    pages = pages or {}
-    for text, lvl in TOC_ITEMS:
-        p = doc.add_paragraph()
-        pf = p.paragraph_format
-        pf.first_line_indent = Cm(0)
-        pf.left_indent = Cm(0 if lvl == 0 else 0.75)
-        pf.line_spacing = 1.5
-        pf.space_after = Pt(0)
-        pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        pf.tab_stops.add_tab_stop(Cm(16.5), WD_TAB_ALIGNMENT.RIGHT, 1)
-        run(p, text, 14, bold=(lvl == 0))
-        run(p, "\t" + str(pages.get(text, "")) if pages else "\t", 14, bold=(lvl == 0))
+    word_toc.fill_toc(doc, TOC_ITEMS, lambda p, t, s, bold=False: run(p, t, s, bold=bold))
 
 
 def intro_common():
-    H1("ЗАДАЧА", page_break=True)
+    H1("ЗАДАЧА", page_break=True, bookmark="toc_zad")
     P("Для производства трех видов продукции предприятие использует три вида ресурсов. "
       "Данные представлены в табл. 1:")
     table(
@@ -389,7 +383,7 @@ def plan_row(name, x, f):
 
 
 def task24a():
-    P("а) Решение задачи методом последовательных уступок.", indent=True, bold=True)
+    H2("а) Решение задачи методом последовательных уступок.", bookmark="toc_24a")
     P("Предпочтительность всех критериев определена. Находим оптимальное решение по "
       "критерию I – прибыли (рис. 1.1):")
     figure("xl2_a1.png", 14.6, "Рисунок 1.1 – Шаг 1. Максимум прибыли")
@@ -416,7 +410,7 @@ def task24a():
 
 
 def task24b():
-    P("б) Решение задачи методом ведущего критерия.", indent=True, bold=True)
+    H2("б) Решение задачи методом ведущего критерия.", bookmark="toc_24b")
     P("Все критерии, кроме самого важного, переводятся в разряд ограничений. ЭММ:")
     omml.add_eqarr(doc, [
         ["max ", ("f", "1"), " = 22", ("x", "1"), " + 12", ("x", "2"), " + 14", ("x", "3")],
@@ -443,7 +437,7 @@ def task24b():
 
 
 def task24c():
-    P("в) Решение задачи методом равных и наименьших относительных отклонений.", indent=True, bold=True)
+    H2("в) Решение задачи методом равных и наименьших относительных отклонений.", bookmark="toc_24c")
     P("Сначала на листе «2.4в» решаем задачу по каждому критерию отдельно (x_{1} ≥ 20). "
       "Частные оптимумы (рис. 1.6):")
     figure("xl2_c1.png", 14.6, "Рисунок 1.6 – Частные оптимумы при x_{1} ≥ 20")
@@ -472,7 +466,7 @@ def task24c():
 
 
 def task24d():
-    P("г) Решение задачи методом минимакса.", indent=True, bold=True)
+    H2("г) Решение задачи методом минимакса.", bookmark="toc_24d")
     P("При x_{3} ≥ 40 сначала находим частные оптимумы (рис. 1.9). Вводим y – наибольшее относительное "
       "отклонение. Для максимизируемых критериев")
     figure("xl2_d1.png", 14.6, "Рисунок 1.9 – Частные оптимумы при x_{3} ≥ 40")
@@ -516,7 +510,7 @@ def task24d():
 
 
 def appendix_a():
-    H1("ПРИЛОЖЕНИЕ А")
+    H1("ПРИЛОЖЕНИЕ А", bookmark="toc_a")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -544,7 +538,7 @@ def appendix_a():
 
 
 def appendix_b():
-    H1("ПРИЛОЖЕНИЕ Б")
+    H1("ПРИЛОЖЕНИЕ Б", bookmark="toc_b")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -600,6 +594,7 @@ def appendix_b():
 
 SECTIONS = [
     ("title", title_page),
+    ("toc", None),
     ("intro", intro_common),
     ("task24a", task24a),
     ("task24b", task24b),
@@ -614,6 +609,7 @@ def build(pages=None, skip=(), out=FN):
     global doc
     doc = Document()
     setup_styles()
+    word_toc.enable_update_fields(doc)
     add_page_number_footer(doc.sections[0])
     doc.sections[0].different_first_page_header_footer = True
     # toc with pages

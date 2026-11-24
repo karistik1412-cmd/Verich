@@ -11,6 +11,7 @@ from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import omml
+import word_toc
 # УСР 3
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -106,7 +107,7 @@ def P(text="", indent=True, align=None, size=14, bold=False, italic=False, color
 _FIRST_H1 = [True]
 
 
-def H1(text, page_break=True):
+def H1(text, page_break=True, bookmark=None):
     if len(doc.paragraphs) == 0 and len(doc.tables) == 0:
         page_break = False
     if page_break:
@@ -117,10 +118,12 @@ def H1(text, page_break=True):
     p.paragraph_format.space_after = Pt(12)
     p.paragraph_format.space_before = Pt(0)
     rich(p, text, 16, bold=True)
+    if bookmark:
+        word_toc.bookmark(p, bookmark)
     return p
 
 
-def H2(text, space_before=14, size=14):
+def H2(text, space_before=14, size=14, bookmark=None):
     p = doc.add_paragraph()
     pf = p.paragraph_format
     pf.first_line_indent = Cm(0)
@@ -129,6 +132,8 @@ def H2(text, space_before=14, size=14):
     pf.space_after = Pt(4)
     pf.keep_with_next = True
     rich(p, text, size, bold=True)
+    if bookmark:
+        word_toc.bookmark(p, bookmark)
     return p
 
 
@@ -322,36 +327,25 @@ def title_page():
 
 
 TOC_ITEMS = [
-    ("ЗАДАЧИ", 0),
-    ("Задача 3.4. Предельный уровень инфляции", 1),
-    ("Задача 3.6. Инвестиции при инфляции", 1),
-    ("Задача 3.12. Оптимальный портфель", 1),
-    ("ПРИЛОЖЕНИЕ А", 0),
+    ("ЗАДАЧИ", 0, "toc_zad"),
+    ("Задача 3.4. Предельный уровень инфляции", 1, "toc_34"),
+    ("Задача 3.6. Инвестиции при инфляции", 1, "toc_36"),
+    ("Задача 3.12. Оптимальный портфель", 1, "toc_312"),
+    ("ПРИЛОЖЕНИЕ А", 0, "toc_a"),
 ]
 
 
-def toc(pages):
+def toc(pages=None):
     H1("ОГЛАВЛЕНИЕ", page_break=True)
-    pages = pages or {}
-    for text, lvl in TOC_ITEMS:
-        p = doc.add_paragraph()
-        pf = p.paragraph_format
-        pf.first_line_indent = Cm(0)
-        pf.left_indent = Cm(0 if lvl == 0 else 0.75)
-        pf.line_spacing = 1.5
-        pf.space_after = Pt(0)
-        pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        pf.tab_stops.add_tab_stop(Cm(16.5), WD_TAB_ALIGNMENT.RIGHT, 1)
-        run(p, text, 14, bold=(lvl == 0))
-        run(p, "\t" + str(pages.get(text, "")) if pages else "\t", 14, bold=(lvl == 0))
+    word_toc.fill_toc(doc, TOC_ITEMS, lambda p, t, s, bold=False: run(p, t, s, bold=bold))
 
 
 def tasks():
-    H1("ЗАДАЧА", page_break=True)
+    H1("ЗАДАЧА", page_break=True, bookmark="toc_zad")
     P("Решение записываем как на занятии. Excel – для подстановки в формулы NPV "
       "и для Поиска решения в задаче 3.12 (скрины в приложении).")
 
-    H2("ЗАДАЧА 3.4")
+    H2("ЗАДАЧА 3.4", bookmark="toc_34")
     P("В учебнике – задача 1.4. I_{0} = 150, CF_{1} = CF_{2} = 150, r = 15 %. "
       "Найти предельный уровень инфляции, при котором NPV ≥ 0.")
     P("Ставка с учётом инфляции и NPV:")
@@ -371,7 +365,7 @@ def tasks():
         caption="Таблица 1")
     P("Проект эффективен при инфляции не выше 40,70 %.")
 
-    H2("ЗАДАЧА 3.6")
+    H2("ЗАДАЧА 3.6", bookmark="toc_36")
     P("В учебнике – задача 1.6. I_{0} = 800, n = 5, ежегодный CF = 300, r = 12 %. "
       "Инфляция 10 %, 12 % и 18 %. NPV аннуитета:")
     formula("NPV = −I_{0} + CF · (1 − (1+d)^{−n}) / d", "3.4")
@@ -385,7 +379,7 @@ def tasks():
         caption="Таблица 2")
     P("При инфляции 10 % проект ещё выгоден, при 12 % и 18 % – нет.")
 
-    H2("ЗАДАЧА 3.12")
+    H2("ЗАДАЧА 3.12", bookmark="toc_312")
     P("Шесть проектов, r = 15 %, бюджет t = 0 не более 100 млн. Пары 1–2 и 3–5 взаимоисключающие, "
       "спрос на продукцию проектов 2, 3, 5 ≤ 550. NPV проекта:")
     formula("NPV = CF_{0} + CF_{2}/1,15^{2} + CF_{3}/1,15^{3} + CF_{4}/1,15^{4}", "3.5")
@@ -412,7 +406,7 @@ def tasks():
 
 
 def appendix_a():
-    H1("ПРИЛОЖЕНИЕ А")
+    H1("ПРИЛОЖЕНИЕ А", bookmark="toc_a")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -424,6 +418,7 @@ def appendix_a():
 
 SECTIONS = [
     ("title", title_page),
+    ("toc", None),
     ("tasks", tasks),
     ("appA", appendix_a),
 ]
@@ -433,6 +428,7 @@ def build(pages=None, skip=(), out=FN):
     global doc
     doc = Document()
     setup_styles()
+    word_toc.enable_update_fields(doc)
     add_page_number_footer(doc.sections[0])
     doc.sections[0].different_first_page_header_footer = True
     mapping = dict(SECTIONS)
