@@ -352,6 +352,9 @@ def toc(pages):
 
 def intro_common():
     H1("ЗАДАЧИ", page_break=True)
+    P("Решение выполнено в Excel (файл «Эконометрика Верич УСР 2.xlsx»), а не «в тетради». "
+      "Ниже — условие и то, что получено на листах: жёлтые ячейки — ввод, формулы — расход ресурсов "
+      "и критерии, для ЛП использован «Поиск решения».")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
