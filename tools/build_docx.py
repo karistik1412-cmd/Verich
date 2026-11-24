@@ -11,6 +11,7 @@ from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import omml
+import word_toc
 import data as D
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -106,7 +107,7 @@ def P(text="", indent=True, align=None, size=14, bold=False, italic=False, color
 _FIRST_H1 = [True]
 
 
-def H1(text, page_break=True):
+def H1(text, page_break=True, bookmark=None):
     if len(doc.paragraphs) == 0 and len(doc.tables) == 0:
         page_break = False
     if page_break:
@@ -117,10 +118,12 @@ def H1(text, page_break=True):
     p.paragraph_format.space_after = Pt(12)
     p.paragraph_format.space_before = Pt(0)
     rich(p, text, 16, bold=True)
+    if bookmark:
+        word_toc.bookmark(p, bookmark)
     return p
 
 
-def H2(text, space_before=14, size=14):
+def H2(text, space_before=14, size=14, bookmark=None):
     p = doc.add_paragraph()
     pf = p.paragraph_format
     pf.first_line_indent = Cm(0)
@@ -129,6 +132,8 @@ def H2(text, space_before=14, size=14):
     pf.space_after = Pt(4)
     pf.keep_with_next = True
     rich(p, text, size, bold=True)
+    if bookmark:
+        word_toc.bookmark(p, bookmark)
     return p
 
 
@@ -351,42 +356,32 @@ def title_page():
 
 # --- оглавление
 TOC_ITEMS = [
-    ("ЗАДАЧИ", 0),
-    ("Задача 5.1 (е). Сетевой график проекта", 1),
-    ("Задача 5.3 (а). Оптимизация по времени", 1),
-    ("Задача 5.5 (а). Минимизация срока", 1),
-    ("Задача 5.8 (а). Оптимизация по стоимости", 1),
-    ("Задача 5.16 (а). Оптимизация по ресурсам", 1),
-    ("ПРИЛОЖЕНИЕ А", 0),
-    ("ПРИЛОЖЕНИЕ Б", 0),
+    ("ЗАДАЧИ", 0, "toc_zad"),
+    ("Задача 5.1 (е). Сетевой график проекта", 1, "toc_51"),
+    ("Задача 5.3 (а). Оптимизация по времени", 1, "toc_53"),
+    ("Задача 5.5 (а). Минимизация срока", 1, "toc_55"),
+    ("Задача 5.8 (а). Оптимизация по стоимости", 1, "toc_58"),
+    ("Задача 5.16 (а). Оптимизация по ресурсам", 1, "toc_516"),
+    ("ПРИЛОЖЕНИЕ А", 0, "toc_a"),
+    ("ПРИЛОЖЕНИЕ Б", 0, "toc_b"),
 ]
 
 
-def toc(pages):
+def toc(pages=None):
     H1("ОГЛАВЛЕНИЕ", page_break=True)
-    pages = pages or {}
-    for text, lvl in TOC_ITEMS:
-        p = doc.add_paragraph()
-        pf = p.paragraph_format
-        pf.first_line_indent = Cm(0)
-        pf.left_indent = Cm(0 if lvl == 0 else 0.75)
-        pf.line_spacing = 1.5
-        pf.space_after = Pt(0)
-        pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        pf.tab_stops.add_tab_stop(Cm(16.5), WD_TAB_ALIGNMENT.RIGHT, 1)  # 1 = dots
-        run(p, text, 14, bold=(lvl == 0))
-        run(p, "\t" + str(pages.get(text, "")) if pages else "\t", 14, bold=(lvl == 0))
+    word_toc.fill_toc(doc, TOC_ITEMS, lambda p, t, s, bold=False: run(p, t, s, bold=bold))
 
 
 # =============================================================== ЗАДАЧА 5.1
 def task51():
-    H1("ЗАДАЧА", page_break=True)
+    H1("ЗАДАЧА", page_break=True, bookmark="toc_zad")
     P("Решение – как на занятии: сетевой график, формулы сроков и резервов. Скриншоты Excel – "
       "в приложении А.")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
     rich(p, "ЗАДАЧА 5.1 (е)", 14, bold=True, color=DARK)
+    word_toc.bookmark(p, "toc_51")
 
     P("Проект включает в себя работы, перечень которых с указанием предшествующих работ и "
       "времени выполнения приведён в таблице 1.1.")
@@ -457,7 +452,7 @@ def task51():
 
 # =============================================================== ЗАДАЧА 5.3
 def task53():
-    H2("ЗАДАЧА 5.3 (а)", space_before=24)
+    H2("ЗАДАЧА 5.3 (а)", space_before=24, bookmark="toc_53")
     P("Проект представлен сетевым графиком (рисунок 2.1). Для каждой работы известны время "
       "выполнения t_{ij}, минимально возможное время выполнения d_{ij} и технологические "
       "коэффициенты использования дополнительных средств k_{ij} (таблица 2.1).")
@@ -510,7 +505,7 @@ def task53():
 
 # =============================================================== ЗАДАЧА 5.5
 def task55():
-    H2("ЗАДАЧА 5.5 (а)", space_before=24)
+    H2("ЗАДАЧА 5.5 (а)", space_before=24, bookmark="toc_55")
     P("Проект представлен сетевым графиком (рисунок 3.1). Для каждой работы известно время её "
       "выполнения t_{ij} и минимально возможное время выполнения d_{ij}. Для сокращения срока "
       "реализации проекта выделено B = 42 ден. ед. Время выполнения каждой работы линейно "
@@ -552,7 +547,7 @@ def task55():
 
 # =============================================================== ЗАДАЧА 5.8
 def task58():
-    H2("ЗАДАЧА 5.8 (а)", space_before=24)
+    H2("ЗАДАЧА 5.8 (а)", space_before=24, bookmark="toc_58")
     P("Для заданной сетевой модели (рисунок 4.1) и параметров работ (таблица 4.1) требуется "
       "сократить время выполнения проекта при минимальном возрастании его стоимости.")
     P("Цифры, приписанные дугам графика, означают время выполнения работ в нормальном D_{ij} и "
@@ -637,7 +632,7 @@ def task58():
 
 # ============================================================== ЗАДАЧА 5.16
 def task516():
-    H2("ЗАДАЧА 5.16 (а)", space_before=24)
+    H2("ЗАДАЧА 5.16 (а)", space_before=24, bookmark="toc_516")
     P("Произвести оптимизацию проекта по ресурсам, представленного сетевым графиком "
       "(рисунок 5.1). Числа, приписанные дугам, означают время выполнения работы t_{ij} "
       "(первое) и необходимое количество ресурса r_{ij} (второе). Выделено R = 9 ед. ресурса. "
@@ -700,7 +695,7 @@ def task516():
 
 # ================================================================ ПРИЛОЖЕНИЕ А
 def appendix_a():
-    H1("ПРИЛОЖЕНИЕ А", page_break=True)
+    H1("ПРИЛОЖЕНИЕ А", page_break=True, bookmark="toc_a")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -718,7 +713,7 @@ def appendix_a():
 
 # ================================================================ ПРИЛОЖЕНИЕ Б
 def appendix_b():
-    H1("ПРИЛОЖЕНИЕ Б", page_break=True)
+    H1("ПРИЛОЖЕНИЕ Б", page_break=True, bookmark="toc_b")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -893,6 +888,7 @@ def appendix_b():
 # ================================================================== сборка
 SECTIONS = [
     ("title", "title_page"),
+    ("toc", "toc"),
     ("task51", "task51"),
     ("task53", "task53"),
     ("task55", "task55"),
@@ -908,6 +904,7 @@ def build(pages=None, skip=(), out=FN):
     doc = Document()
     _FIRST_H1 = ["title" in skip]
     setup_styles()
+    word_toc.enable_update_fields(doc)
     sec = doc.sections[0]
     sec.different_first_page_header_footer = True
     add_page_number_footer(sec)
