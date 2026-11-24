@@ -10,6 +10,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+import omml
 import data as D
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -475,8 +476,13 @@ def task53():
     P("При нормальных сроках t_{кр} = 40 дн. (путь 1–4–5–6), директивный срок t_{0} = 35. "
       "ЭММ:")
     formula("f = Σ x_{ij} → min", "5.7")
-    formula("t_{о}(n) ≤ 35;   t_{о}−t_{н} ≥ d_{ij};   t_{о}−t_{н} = t_{ij} − k_{ij} x_{ij};", "5.8")
-    formula("t_{н}(jk) ≥ t_{о}(ij);   0 ≤ x_{ij} ≤ (t_{ij}−d_{ij})/k_{ij}.", "5.9")
+    omml.add_brace_system(doc, [
+        ["tо(n) ≤ 35"],
+        ["tо − tн ≥ d_ij"],
+        ["tо − tн = t_ij − k_ij x_ij"],
+        ["tн(jk) ≥ tо(ij)"],
+        ["0 ≤ x_ij ≤ (t_ij − d_ij)/k_ij"],
+    ])
     P("Оптимум (Поиск решения, скрин в приложении):")
 
     rows = [["Работа (i, j)", "x_{ij}, ден. ед.", "t′_{ij}, дн.",
