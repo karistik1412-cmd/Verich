@@ -17,7 +17,7 @@ ASSETS = os.path.join(ROOT, "assets")
 FN = os.path.join(ROOT, "Пась А.М. 24ИТ-3 УСР Свитина.docx")
 
 FONT = "Times New Roman"
-DARK = RGBColor(0x1F, 0x38, 0x64)
+DARK = RGBColor(0x00, 0x00, 0x00)
 RED = RGBColor(0xC0, 0x00, 0x00)
 GREY = RGBColor(0x59, 0x59, 0x59)
 HDR_FILL = "DEEAF6"
@@ -115,7 +115,7 @@ def H1(text, page_break=True):
     p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.space_after = Pt(12)
     p.paragraph_format.space_before = Pt(0)
-    rich(p, text, 16, bold=True, color=DARK)
+    rich(p, text, 16, bold=True)
     return p
 
 
@@ -127,7 +127,7 @@ def H2(text, space_before=14, size=14):
     pf.space_before = Pt(space_before)
     pf.space_after = Pt(4)
     pf.keep_with_next = True
-    rich(p, text, size, bold=True, color=DARK)
+    rich(p, text, size, bold=True)
     return p
 
 
@@ -138,7 +138,7 @@ def FCAP(text):
     pf.alignment = WD_ALIGN_PARAGRAPH.CENTER
     pf.space_before = Pt(4)
     pf.space_after = Pt(10)
-    rich(p, text, 13, bold=False, italic=False)
+    rich(p, text, 12, bold=True)
     return p
 
 
@@ -289,32 +289,35 @@ def add_page_number_footer(section):
 
 def title_page():
     def tp(text, size=14, bold=False, before=0, after=0, color=None,
-           align=WD_ALIGN_PARAGRAPH.CENTER):
+           align=WD_ALIGN_PARAGRAPH.CENTER, indent=0.0, tabs=None):
         p = doc.add_paragraph()
         pf = p.paragraph_format
         pf.first_line_indent = Cm(0)
+        pf.left_indent = Cm(indent)
         pf.alignment = align
         pf.space_before = Pt(before)
         pf.space_after = Pt(after)
         pf.line_spacing = 1.0
+        if tabs:
+            for pos in tabs:
+                pf.tab_stops.add_tab_stop(Cm(pos), WD_TAB_ALIGNMENT.RIGHT)
         rich(p, text, size, bold=bold, color=color)
 
-    tp("МИНИСТЕРСТВО ОБРАЗОВАНИЯ РЕСПУБЛИКИ БЕЛАРУСЬ", 13, True, 0, 4)
-    tp("УО «ПОЛЕССКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ»", 13, True, 0, 26)
-    tp("Инженерный факультет", 14)
-    tp("Кафедра информационных технологий и интеллектуальных систем", 13.5)
-    tp("ОТЧЁТ", 22, True, 110, 8)
-    tp("УСР №1", 16, True, 0, 30)
-    tp("по дисциплине: «Эконометрика и исследование операций в экономике»", 14, False, 0, 8)
-    tp("на тему: «Модели межотраслевого баланса»", 14, False, 0, 12)
-    tp("Задача 1.6", 14, True, 0, 0, DARK)
-    R = WD_ALIGN_PARAGRAPH.RIGHT
-    tp("Выполнил:", 14, False, 104, 0, None, R)
-    tp("студент группы 24ИТ-3", 14, False, 0, 0, None, R)
-    tp("Пась А. М.", 14, False, 0, 0, None, R)
-    tp("Проверил:", 14, False, 22, 0, None, R)
-    tp("Свитина", 14, False, 0, 0, None, R)
-    tp("ПИНСК 2026", 14, True, 40, 0)
+    tp("МИНИСТЕРСТВО ОБРАЗОВАНИЯ РЕСПУБЛИКИ БЕЛАРУСЬ", 16, False, 0, 0)
+    tp("УО «ПОЛЕССКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ»", 16, False, 0, 12)
+    tp("Инженерный факультет", 14, False, 12, 0)
+    tp("Кафедра информационных технологий и интеллектуальных систем", 14, False, 0, 0)
+    tp("ОТЧЁТ", 16, True, 72, 6)
+    tp("УСР №1", 16, True, 0, 18)
+    tp("по дисциплине: «Эконометрика и исследование операций в экономике»", 16, False, 0, 6)
+    tp("на тему: «Модели межотраслевого баланса»", 16, False, 0, 0)
+    L = WD_ALIGN_PARAGRAPH.LEFT
+    tp("Выполнил:", 16, False, 80, 0, None, L)
+    tp("студент", 16, False, 0, 0, None, L)
+    tp("группы 24ИТ-3\tПась А.М.", 16, False, 0, 0, None, L, 0.0, [16.5])
+    tp("Проверил:", 16, False, 16, 0, None, L)
+    tp("Свитина", 16, False, 0, 0, None, L, 0.0, [16.5])
+    tp("ПИНСК 2026", 16, False, 36, 0)
 
 
 TOC_ITEMS = [
@@ -350,10 +353,9 @@ def f2(x):
 
 
 def task16():
-    H1("ЗАДАЧИ", page_break=True)
-    P("Решение выполнено в Excel (файл «Пась А.М. 24ИТ-3 УСР Свитина.xlsx»), листы «Задание», "
-      "«1.6 МОБ» и «Цены». Ниже — условие и результаты формул Excel (MINVERSE, ссылки на потоки), "
-      "а не рукописный расчёт.")
+    H1("ЗАДАЧА", page_break=True)
+    P("Условие – ниже. Решение: схема МОБ и формулы баланса, числа считаем в Excel "
+      "(файл «Пась А.М. 24ИТ-3 УСР Свитина.xlsx», функции МОБР и МУМНОЖ).")
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
     rich(p, "ЗАДАЧА 1.6", 14, bold=True, color=DARK)
@@ -381,11 +383,9 @@ def task16():
         [5.4, 2.4, 2.4, 2.4, 2.8], font=12,
         caption="Таблица 1.1 – Исходные межотраслевые потоки и конечное использование")
 
-    H2("Решение в Excel (лист «1.6 МОБ»)")
-    P("Потоки B6:D8 введены с листа «Задание». Промежуточное потребление: E6 =B6+C6+D6 "
-      "(и аналогично E7, E8). Валовой выпуск: G6 =E6+F6. В G6:G8 получается 145; 130; 130.")
-    P("Промежуточные затраты по столбцам: B9 =B6+B7+B8 и т. д. (80; 85; 65). "
-      "ВДС: B12 =B13-B9. Зарплата: B10 =0,3*B12. Прочие элементы ВДС: B11 =B12-B10.")
+    H2("Решение:")
+    P("Валовой выпуск X_i = сумма потоков строки плюс Y_i. Получаем X^{отч} = (145; 130; 130). "
+      "ВДС Z_j = X_j − промежуточные затраты. Зарплата – 30 % ВДС. Схема МОБ:")
 
     table(
         [["", "1", "2", "3", "Пром. потр.", "Y", "X"],
@@ -400,8 +400,8 @@ def task16():
         [3.6, 1.8, 1.8, 1.8, 2.4, 1.6, 1.8], font=10,
         caption="Таблица 1.2 – Схема МОБ за отчётный период")
 
-    P("Матрица A на том же листе: каждая ячейка = поток / выпуск столбца, например "
-      "a11 = B6/G6. B = МОБР(E−A), Xпл = МУМНОЖ(B; Yпл).")
+    P("Коэффициенты прямых затрат a_{ij} = x_{ij} / X_j. Матрица полных затрат B = (E − A)^{−1} "
+      "считается в Excel функцией МОБР:")
     table(
         [["A", "1", "2", "3"],
          ["1", "0,2069", "0,0769", "0,1154"],
@@ -419,8 +419,8 @@ def task16():
         [3.0, 3.6, 3.6, 3.6], font=12,
         caption="Таблица 1.4 – Матрица полных затрат B")
 
-    P("Yпл введено как 120; 30; 60. Формула массива МУМНОЖ даёт Xпл ≈ 187,38; 157,92; 142,68. "
-      "Плановые потоки = a_ij * Xj пл (ссылки на A и на Xпл). Схема:")
+    P("Плановый выпуск X^{пл} = B Y^{пл}. В Excel (МУМНОЖ) X^{пл} ≈ (187,38; 157,92; 142,68). "
+      "Плановые потоки x_{ij}^{пл} = a_{ij} X_j^{пл}:")
 
     table(
         [["", "1", "2", "3", "Пром. потр.", "Y^{пл}", "X^{пл}"],
@@ -437,11 +437,11 @@ def task16():
     P("Сумма ВДС 210 совпадает с суммой конечного использования 120 + 30 + 60 = 210, "
       "что подтверждает согласованность баланса.")
 
-    H2("Прогнозирование цен (лист «Цены»)")
-    P("X, з/п, прочие ВДС и потоки подтянуты ссылками ='1.6 МОБ'!… .")
-    P("Пункт 4. В ячейку p1 записано 2, k_w = 0,7. Коэффициенты системы для p2, p3 собраны "
-      "формулами из X, потоков и ВДС. Решение – МОБР и МУМНОЖ: p2 ≈ 1,431, p3 ≈ 1,435.")
-    P("Пункт 5. Новая з/п 2-й отрасли =C7*1,3. Система 3×3 решается теми же МОБР и МУМНОЖ: "
+    H2("Прогнозирование цен")
+    P("Пункт 4. Задано p_{1} = 2, эластичность з/п k_w = 0,7. Из стоимостного баланса отраслей "
+      "получаем систему относительно p_{2}, p_{3}. Решение в Excel (МОБР, МУМНОЖ): "
+      "p_{2} ≈ 1,431, p_{3} ≈ 1,435.")
+    P("Пункт 5. Зарплата 2-й отрасли · 1,3. Система на три индекса цен. "
       "p ≈ (1,087; 1,140; 1,075).")
 
     table(
@@ -488,7 +488,6 @@ def appendix_b():
 
 SECTIONS = [
     ("title", title_page),
-    ("toc", lambda: toc(None)),
     ("task16", task16),
     ("appA", appendix_a),
     ("appB", appendix_b),
